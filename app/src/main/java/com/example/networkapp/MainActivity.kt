@@ -1,8 +1,12 @@
 package com.example.networkapp
 
+import android.content.Intent
 import android.content.SharedPreferences
+import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.provider.Settings
+import android.util.Log
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageView
@@ -30,8 +34,7 @@ class MainActivity : AppCompatActivity() {
     lateinit var numberEditText: EditText
     lateinit var showButton: Button
     lateinit var comicImageView: ImageView
-    private var save = false
-    private lateinit var preferences: SharedPreferences
+
 
     private val internalFilename = "my_file"
     private lateinit var  file: File
@@ -46,7 +49,7 @@ class MainActivity : AppCompatActivity() {
         numberEditText = findViewById<EditText>(R.id.comicNumberEditText)
         showButton = findViewById<Button>(R.id.showComicButton)
         comicImageView = findViewById<ImageView>(R.id.comicImageView)
-        preferences = getPreferences(MODE_PRIVATE)
+
         file = File(filesDir,internalFilename)
 
         if(file.exists()){
@@ -60,8 +63,7 @@ class MainActivity : AppCompatActivity() {
                 }
                 br.close()
                 downloadComic(text.toString())
-                //turn string into json object
-                ///////////////////////
+
             }
             catch(e: IOException){
                 e.printStackTrace()
@@ -71,10 +73,27 @@ class MainActivity : AppCompatActivity() {
         showButton.setOnClickListener {
             downloadComic(numberEditText.text.toString())
 
+        }
 
+        if(intent?.action ==  Intent.ACTION_VIEW){
+            intent.data?.path?.run{
+                downloadComic(split("/")[1])
+            }
         }
 
 
+        findViewById<Button>(R.id.button).setOnClickListener{
+            try {
+                val intent = Intent(
+                    Settings.ACTION_APP_OPEN_BY_DEFAULT_SETTINGS,
+                    Uri.parse("package:${packageName}")
+                )
+                startActivity(intent)
+            }
+            catch(e: Exception){
+
+            }
+        }
 
     }
 
@@ -83,7 +102,6 @@ class MainActivity : AppCompatActivity() {
         requestQueue.add (
             JsonObjectRequest(url, {
 
-            //    save commic to file here
                 try{
                     val outputStream = FileOutputStream(file)
                     outputStream.write(numberEditText.text.toString().toByteArray())
